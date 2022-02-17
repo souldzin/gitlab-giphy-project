@@ -1,3 +1,3 @@
-import initSortDiscussions from "../notes/sort_discussions";
+import initNotes from "../notes";
 
-initSortDiscussions();
+initNotes();

@@ -4,17 +4,15 @@ import {
   GlLoadingIcon,
   GlTooltipDirective,
   GlSafeHtmlDirective as SafeHtml,
-} from '@gitlab/ui';
-import { mapActions } from 'vuex';
-import timeAgoTooltip from '~/vue_shared/components/time_ago_tooltip.vue';
-import UserNameWithStatus from '../../sidebar/components/assignees/user_name_with_status.vue';
+} from "@gitlab/ui";
+import { mapActions } from "vuex";
+import timeAgoTooltip from "~/vue_shared/components/time_ago_tooltip.vue";
+import UserNameWithStatus from "../../sidebar/components/assignees/user_name_with_status.vue";
 
 export default {
-  safeHtmlConfig: { ADD_TAGS: ['gl-emoji'] },
+  safeHtmlConfig: { ADD_TAGS: ["gl-emoji"] },
   components: {
     timeAgoTooltip,
-    GitlabTeamMemberBadge: () =>
-      import('ee_component/vue_shared/components/user_avatar/badges/gitlab_team_member_badge.vue'),
     GlIcon,
     GlLoadingIcon,
     UserNameWithStatus,
@@ -37,7 +35,7 @@ export default {
     actionText: {
       type: String,
       required: false,
-      default: '',
+      default: "",
     },
     noteId: {
       type: [String, Number],
@@ -68,13 +66,13 @@ export default {
   data() {
     return {
       isUsernameLinkHovered: false,
-      emojiTitle: '',
+      emojiTitle: "",
       authorStatusHasTooltip: false,
     };
   },
   computed: {
     toggleChevronIconName() {
-      return this.expanded ? 'chevron-up' : 'chevron-down';
+      return this.expanded ? "chevron-up" : "chevron-down";
     },
     noteTimestampLink() {
       return this.noteId ? `#note_${this.noteId}` : undefined;
@@ -85,9 +83,9 @@ export default {
     authorLinkClasses() {
       return {
         hover: this.isUsernameLinkHovered,
-        'text-underline': this.isUsernameLinkHovered,
-        'author-name-link': true,
-        'js-user-link': true,
+        "text-underline": this.isUsernameLinkHovered,
+        "author-name-link": true,
+        "js-user-link": true,
       };
     },
     authorStatus() {
@@ -97,24 +95,26 @@ export default {
       return false;
     },
     emojiElement() {
-      return this.$refs?.authorStatus?.querySelector('gl-emoji');
+      return this.$refs?.authorStatus?.querySelector("gl-emoji");
     },
     authorName() {
       return this.author.name;
     },
   },
   mounted() {
-    this.emojiTitle = this.emojiElement ? this.emojiElement.getAttribute('title') : '';
+    this.emojiTitle = this.emojiElement
+      ? this.emojiElement.getAttribute("title")
+      : "";
 
     const authorStatusTitle = this.$refs?.authorStatus
-      ?.querySelector('.user-status-emoji')
-      ?.getAttribute('title');
-    this.authorStatusHasTooltip = authorStatusTitle && authorStatusTitle !== '';
+      ?.querySelector(".user-status-emoji")
+      ?.getAttribute("title");
+    this.authorStatusHasTooltip = authorStatusTitle && authorStatusTitle !== "";
   },
   methods: {
-    ...mapActions(['setTargetNoteHash']),
+    ...mapActions(["setTargetNoteHash"]),
     handleToggle() {
-      this.$emit('toggleHandler');
+      this.$emit("toggleHandler");
     },
     updateTargetNoteHash() {
       if (this.$store) {
@@ -122,21 +122,21 @@ export default {
       }
     },
     removeEmojiTitle() {
-      this.emojiElement.removeAttribute('title');
+      this.emojiElement.removeAttribute("title");
     },
     addEmojiTitle() {
-      this.emojiElement.setAttribute('title', this.emojiTitle);
+      this.emojiElement.setAttribute("title", this.emojiTitle);
     },
     handleUsernameMouseEnter() {
-      this.$refs.authorNameLink.dispatchEvent(new Event('mouseenter'));
+      this.$refs.authorNameLink.dispatchEvent(new Event("mouseenter"));
       this.isUsernameLinkHovered = true;
     },
     handleUsernameMouseLeave() {
-      this.$refs.authorNameLink.dispatchEvent(new Event('mouseleave'));
+      this.$refs.authorNameLink.dispatchEvent(new Event("mouseleave"));
       this.isUsernameLinkHovered = false;
     },
     userAvailability(selectedAuthor) {
-      return selectedAuthor?.availability || '';
+      return selectedAuthor?.availability || "";
     },
   },
 };
@@ -144,14 +144,18 @@ export default {
 
 <template>
   <div class="note-header-info">
-    <div v-if="includeToggle" ref="discussionActions" class="discussion-actions">
+    <div
+      v-if="includeToggle"
+      ref="discussionActions"
+      class="discussion-actions"
+    >
       <button
         class="note-action-button discussion-toggle-button js-vue-toggle-button"
         type="button"
         @click="handleToggle"
       >
         <gl-icon ref="chevronIcon" :name="toggleChevronIconName" />
-        {{ __('Toggle thread') }}
+        {{ __("Toggle thread") }}
       </button>
     </div>
     <template v-if="hasAuthor">
@@ -174,7 +178,9 @@ export default {
         ref="authorStatus"
         v-safe-html:[$options.safeHtmlConfig]="authorStatus"
         v-on="
-          authorStatusHasTooltip ? { mouseenter: removeEmojiTitle, mouseleave: addEmojiTitle } : {}
+          authorStatusHasTooltip
+            ? { mouseenter: removeEmojiTitle, mouseleave: addEmojiTitle }
+            : {}
         "
       ></span>
       <span class="text-nowrap author-username">
@@ -186,10 +192,9 @@ export default {
           @mouseleave="handleUsernameMouseLeave"
           ><span class="note-headline-light">@{{ author.username }}</span>
         </a>
-        <gitlab-team-member-badge v-if="author && author.is_gitlab_employee" />
       </span>
     </template>
-    <span v-else>{{ __('A deleted user') }}</span>
+    <span v-else>{{ __("A deleted user") }}</span>
     <span class="note-headline-light note-headline-meta">
       <span class="system-note-message" data-qa-selector="system_note_content">
         <slot></slot>
@@ -207,7 +212,12 @@ export default {
         >
           <time-ago-tooltip :time="createdAt" tooltip-placement="bottom" />
         </a>
-        <time-ago-tooltip v-else ref="noteTimestamp" :time="createdAt" tooltip-placement="bottom" />
+        <time-ago-tooltip
+          v-else
+          ref="noteTimestamp"
+          :time="createdAt"
+          tooltip-placement="bottom"
+        />
       </template>
       <gl-icon
         v-if="isConfidential"
@@ -215,7 +225,11 @@ export default {
         data-testid="confidentialIndicator"
         name="eye-slash"
         :size="16"
-        :title="s__('Notes|This comment is confidential and only visible to project members')"
+        :title="
+          s__(
+            'Notes|This comment is confidential and only visible to project members'
+          )
+        "
         class="gl-ml-1 gl-text-orange-700 align-middle"
       />
       <slot name="extra-controls"></slot>
