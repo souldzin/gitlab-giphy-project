@@ -1,12 +1,12 @@
-import Vue from 'vue';
-import notesApp from './components/notes_app.vue';
-import initDiscussionFilters from './discussion_filters';
-import initSortDiscussions from './sort_discussions';
-import { store } from './stores';
-import initTimelineToggle from './timeline';
+import Vue from "vue";
+import notesApp from "./components/notes_app.vue";
+import initDiscussionFilters from "./discussion_filters";
+import initSortDiscussions from "./sort_discussions";
+import { store } from "./stores";
+import initTimelineToggle from "./timeline";
 
 export default () => {
-  const el = document.getElementById('js-vue-notes');
+  const el = document.getElementById("js-vue-notes");
   if (!el) {
     return;
   }
@@ -14,7 +14,7 @@ export default () => {
   // eslint-disable-next-line no-new
   new Vue({
     el,
-    name: 'NotesRoot',
+    name: "NotesRoot",
     components: {
       notesApp,
     },
@@ -50,7 +50,7 @@ export default () => {
       };
     },
     render(createElement) {
-      return createElement('notes-app', {
+      return createElement("notes-app", {
         props: {
           noteableData: this.noteableData,
           notesData: this.notesData,

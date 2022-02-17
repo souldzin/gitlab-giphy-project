@@ -1,13 +1,11 @@
 <script>
-import { GlLink } from '@gitlab/ui';
+import { GlLink } from "@gitlab/ui";
 
-import TaskList from '~/task_list';
+import TimeAgoTooltip from "~/vue_shared/components/time_ago_tooltip.vue";
 
-import TimeAgoTooltip from '~/vue_shared/components/time_ago_tooltip.vue';
-
-import IssuableDescription from './issuable_description.vue';
-import IssuableEditForm from './issuable_edit_form.vue';
-import IssuableTitle from './issuable_title.vue';
+import IssuableDescription from "./issuable_description.vue";
+import IssuableEditForm from "./issuable_edit_form.vue";
+import IssuableTitle from "./issuable_title.vue";
 
 export default {
   components: {
@@ -70,7 +68,7 @@ export default {
     taskListUpdatePath: {
       type: String,
       required: false,
-      default: '',
+      default: "",
     },
     taskListLockVersion: {
       type: Number,
@@ -107,34 +105,18 @@ export default {
     }
   },
   methods: {
-    initTaskList() {
-      this.taskList = new TaskList({
-        /**
-         * We have hard-coded dataType to `issue`
-         * as currently only `issue` types can handle
-         * task-lists, however, we can still use
-         * task lists in Issue, Test Cases and Incidents
-         * as all of those are derived from `issue`.
-         */
-        dataType: 'issue',
-        fieldName: 'description',
-        lockVersion: this.taskListLockVersion,
-        selector: '.js-detail-page-description',
-        onSuccess: this.handleTaskListUpdateSuccess.bind(this),
-        onError: this.handleTaskListUpdateFailure.bind(this),
-      });
-    },
+    initTaskList() {},
     handleTaskListUpdateSuccess(updatedIssuable) {
-      this.$emit('task-list-update-success', updatedIssuable);
+      this.$emit("task-list-update-success", updatedIssuable);
     },
     handleTaskListUpdateFailure() {
-      this.$emit('task-list-update-failure');
+      this.$emit("task-list-update-failure");
     },
     handleKeydownTitle(e, issuableMeta) {
-      this.$emit('keydown-title', e, issuableMeta);
+      this.$emit("keydown-title", e, issuableMeta);
     },
     handleKeydownDescription(e, issuableMeta) {
-      this.$emit('keydown-description', e, issuableMeta);
+      this.$emit("keydown-description", e, issuableMeta);
     },
   },
 };
@@ -142,7 +124,9 @@ export default {
 
 <template>
   <div class="issue-details issuable-details">
-    <div class="detail-page-description js-detail-page-description content-block">
+    <div
+      class="detail-page-description js-detail-page-description content-block"
+    >
       <issuable-edit-form
         v-if="editFormVisible"
         :issuable="issuable"
@@ -179,10 +163,13 @@ export default {
           :task-list-update-path="taskListUpdatePath"
         />
         <small v-if="isUpdated" class="edited-text gl-font-sm!">
-          {{ __('Edited') }}
-          <time-ago-tooltip :time="issuable.updatedAt" tooltip-placement="bottom" />
+          {{ __("Edited") }}
+          <time-ago-tooltip
+            :time="issuable.updatedAt"
+            tooltip-placement="bottom"
+          />
           <span v-if="updatedBy">
-            {{ __('by') }}
+            {{ __("by") }}
             <gl-link :href="updatedBy.webUrl" class="author-link gl-font-sm!">
               <span>{{ updatedBy.name }}</span>
             </gl-link>

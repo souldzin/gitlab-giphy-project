@@ -1,13 +1,16 @@
 <script>
-import { GlButtonGroup, GlButton, GlTooltipDirective, GlSafeHtmlDirective } from '@gitlab/ui';
+import {
+  GlButtonGroup,
+  GlButton,
+  GlTooltipDirective,
+  GlSafeHtmlDirective,
+} from "@gitlab/ui";
 
-import CommitPipelineStatus from '~/projects/tree/components/commit_pipeline_status_component.vue';
-import ModalCopyButton from '~/vue_shared/components/modal_copy_button.vue';
-import TimeAgoTooltip from '~/vue_shared/components/time_ago_tooltip.vue';
-import UserAvatarLink from '~/vue_shared/components/user_avatar/user_avatar_link.vue';
-import glFeatureFlagsMixin from '~/vue_shared/mixins/gl_feature_flags_mixin';
-
-import initUserPopovers from '../../user_popovers';
+import CommitPipelineStatus from "~/projects/tree/components/commit_pipeline_status_component.vue";
+import ModalCopyButton from "~/vue_shared/components/modal_copy_button.vue";
+import TimeAgoTooltip from "~/vue_shared/components/time_ago_tooltip.vue";
+import UserAvatarLink from "~/vue_shared/components/user_avatar/user_avatar_link.vue";
+import glFeatureFlagsMixin from "~/vue_shared/mixins/gl_feature_flags_mixin";
 
 /**
  * CommitItem
@@ -66,10 +69,10 @@ export default {
       return this.author.name || this.commit.author_name;
     },
     authorClass() {
-      return this.author.name ? 'js-user-link' : '';
+      return this.author.name ? "js-user-link" : "";
     },
     authorId() {
-      return this.author.id ? this.author.id : '';
+      return this.author.id ? this.author.id : "";
     },
     authorUrl() {
       // name: 'mailto:' is a false positive: https://gitlab.com/gitlab-org/frontend/eslint-plugin-i18n/issues/26#possible-false-positives
@@ -81,16 +84,11 @@ export default {
     },
     commitDescription() {
       // Strip the newline at the beginning
-      return this.commit.description_html.replace(/^&#x000A;/, '');
+      return this.commit.description_html.replace(/^&#x000A;/, "");
     },
   },
-  created() {
-    this.$nextTick(() => {
-      initUserPopovers(this.$el.querySelectorAll('.js-user-link'));
-    });
-  },
   safeHtmlConfig: {
-    ADD_TAGS: ['gl-emoji'],
+    ADD_TAGS: ["gl-emoji"],
   },
 };
 </script>
@@ -151,7 +149,9 @@ export default {
               class="commit-row-message item-title"
             ></a>
 
-            <span class="commit-row-message d-block d-sm-none">&middot; {{ commit.short_id }}</span>
+            <span class="commit-row-message d-block d-sm-none"
+              >&middot; {{ commit.short_id }}</span
+            >
 
             <gl-button
               v-if="commit.description_html && collapsible"
@@ -170,7 +170,7 @@ export default {
                 :data-user-id="authorId"
                 v-text="authorName"
               ></a>
-              {{ s__('CommitWidget|authored') }}
+              {{ s__("CommitWidget|authored") }}
               <time-ago-tooltip :time="commit.authored_date" />
             </div>
           </div>

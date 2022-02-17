@@ -1,36 +1,45 @@
-import $ from 'jquery';
-import Visibility from 'visibilityjs';
-import Vue from 'vue';
-import Api from '~/api';
-import createFlash from '~/flash';
-import { EVENT_ISSUABLE_VUE_APP_CHANGE } from '~/issuable/constants';
-import axios from '~/lib/utils/axios_utils';
-import { __, sprintf } from '~/locale';
-import { confidentialWidget } from '~/sidebar/components/confidential/sidebar_confidentiality_widget.vue';
-import updateIssueLockMutation from '~/sidebar/components/lock/mutations/update_issue_lock.mutation.graphql';
-import updateMergeRequestLockMutation from '~/sidebar/components/lock/mutations/update_merge_request_lock.mutation.graphql';
-import loadAwardsHandler from '../../awards_handler';
-import { isInViewport, scrollToElement, isInMRPage } from '../../lib/utils/common_utils';
-import Poll from '../../lib/utils/poll';
-import { create } from '../../lib/utils/recurrence';
-import { mergeUrlParams } from '../../lib/utils/url_utility';
-import sidebarTimeTrackingEventHub from '../../sidebar/event_hub';
-import TaskList from '../../task_list';
-import mrWidgetEventHub from '../../vue_merge_request_widget/event_hub';
-import * as constants from '../constants';
-import eventHub from '../event_hub';
-import * as types from './mutation_types';
-import * as utils from './utils';
+import $ from "jquery";
+import Visibility from "visibilityjs";
+import Vue from "vue";
+import Api from "~/api";
+import createFlash from "~/flash";
+import { EVENT_ISSUABLE_VUE_APP_CHANGE } from "~/issuable/constants";
+import axios from "~/lib/utils/axios_utils";
+import { __, sprintf } from "~/locale";
+import { confidentialWidget } from "~/sidebar/components/confidential/sidebar_confidentiality_widget.vue";
+import updateIssueLockMutation from "~/sidebar/components/lock/mutations/update_issue_lock.mutation.graphql";
+import updateMergeRequestLockMutation from "~/sidebar/components/lock/mutations/update_merge_request_lock.mutation.graphql";
+import loadAwardsHandler from "../../awards_handler";
+import {
+  isInViewport,
+  scrollToElement,
+  isInMRPage,
+} from "../../lib/utils/common_utils";
+import Poll from "../../lib/utils/poll";
+import { create } from "../../lib/utils/recurrence";
+import { mergeUrlParams } from "../../lib/utils/url_utility";
+import sidebarTimeTrackingEventHub from "../../sidebar/event_hub";
+import mrWidgetEventHub from "../../vue_merge_request_widget/event_hub";
+import * as constants from "../constants";
+import eventHub from "../event_hub";
+import * as types from "./mutation_types";
+import * as utils from "./utils";
 
 const NOTES_POLLING_INTERVAL = 6000;
 let eTagPoll;
 
-export const updateLockedAttribute = ({ commit, getters }, { locked, fullPath }) => {
+export const updateLockedAttribute = (
+  { commit, getters },
+  { locked, fullPath }
+) => {
   const { iid, targetType } = getters.getNoteableData;
 
   return utils.gqClient
     .mutate({
-      mutation: targetType === 'issue' ? updateIssueLockMutation : updateMergeRequestLockMutation,
+      mutation:
+        targetType === "issue"
+          ? updateIssueLockMutation
+          : updateMergeRequestLockMutation,
       variables: {
         input: {
           projectPath: fullPath,
@@ -41,7 +50,7 @@ export const updateLockedAttribute = ({ commit, getters }, { locked, fullPath })
     })
     .then(({ data }) => {
       const discussionLocked =
-        targetType === 'issue'
+        targetType === "issue"
           ? data.issueSetLocked.issue.discussionLocked
           : data.mergeRequestSetLocked.mergeRequest.discussionLocked;
 
@@ -51,57 +60,76 @@ export const updateLockedAttribute = ({ commit, getters }, { locked, fullPath })
 
 export const expandDiscussion = ({ commit, dispatch }, data) => {
   if (data.discussionId) {
-    dispatch('diffs/renderFileForDiscussionId', data.discussionId, { root: true });
+    dispatch("diffs/renderFileForDiscussionId", data.discussionId, {
+      root: true,
+    });
   }
 
   commit(types.EXPAND_DISCUSSION, data);
 };
 
-export const collapseDiscussion = ({ commit }, data) => commit(types.COLLAPSE_DISCUSSION, data);
+export const collapseDiscussion = ({ commit }, data) =>
+  commit(types.COLLAPSE_DISCUSSION, data);
 
-export const setNotesData = ({ commit }, data) => commit(types.SET_NOTES_DATA, data);
+export const setNotesData = ({ commit }, data) =>
+  commit(types.SET_NOTES_DATA, data);
 
-export const setNoteableData = ({ commit }, data) => commit(types.SET_NOTEABLE_DATA, data);
+export const setNoteableData = ({ commit }, data) =>
+  commit(types.SET_NOTEABLE_DATA, data);
 
-export const setConfidentiality = ({ commit }, data) => commit(types.SET_ISSUE_CONFIDENTIAL, data);
+export const setConfidentiality = ({ commit }, data) =>
+  commit(types.SET_ISSUE_CONFIDENTIAL, data);
 
-export const setUserData = ({ commit }, data) => commit(types.SET_USER_DATA, data);
+export const setUserData = ({ commit }, data) =>
+  commit(types.SET_USER_DATA, data);
 
-export const setLastFetchedAt = ({ commit }, data) => commit(types.SET_LAST_FETCHED_AT, data);
+export const setLastFetchedAt = ({ commit }, data) =>
+  commit(types.SET_LAST_FETCHED_AT, data);
 
 export const setInitialNotes = ({ commit }, discussions) =>
   commit(types.ADD_OR_UPDATE_DISCUSSIONS, discussions);
 
-export const setTargetNoteHash = ({ commit }, data) => commit(types.SET_TARGET_NOTE_HASH, data);
+export const setTargetNoteHash = ({ commit }, data) =>
+  commit(types.SET_TARGET_NOTE_HASH, data);
 
 export const setNotesFetchedState = ({ commit }, state) =>
   commit(types.SET_NOTES_FETCHED_STATE, state);
 
-export const toggleDiscussion = ({ commit }, data) => commit(types.TOGGLE_DISCUSSION, data);
+export const toggleDiscussion = ({ commit }, data) =>
+  commit(types.TOGGLE_DISCUSSION, data);
 
-export const setExpandDiscussions = ({ commit }, { discussionIds, expanded }) => {
+export const setExpandDiscussions = (
+  { commit },
+  { discussionIds, expanded }
+) => {
   commit(types.SET_EXPAND_DISCUSSIONS, { discussionIds, expanded });
 };
 
-export const fetchDiscussions = ({ commit, dispatch }, { path, filter, persistFilter }) => {
+export const fetchDiscussions = (
+  { commit, dispatch },
+  { path, filter, persistFilter }
+) => {
   const config =
     filter !== undefined
       ? { params: { notes_filter: filter, persist_filter: persistFilter } }
       : null;
 
   if (window.gon?.features?.paginatedIssueDiscussions) {
-    return dispatch('fetchDiscussionsBatch', { path, config, perPage: 20 });
+    return dispatch("fetchDiscussionsBatch", { path, config, perPage: 20 });
   }
 
   return axios.get(path, config).then(({ data }) => {
     commit(types.ADD_OR_UPDATE_DISCUSSIONS, data);
     commit(types.SET_FETCHING_DISCUSSIONS, false);
 
-    dispatch('updateResolvableDiscussionsCounts');
+    dispatch("updateResolvableDiscussionsCounts");
   });
 };
 
-export const fetchDiscussionsBatch = ({ commit, dispatch }, { path, config, cursor, perPage }) => {
+export const fetchDiscussionsBatch = (
+  { commit, dispatch },
+  { path, config, cursor, perPage }
+) => {
   const params = { ...config?.params, per_page: perPage };
 
   if (cursor) {
@@ -111,7 +139,7 @@ export const fetchDiscussionsBatch = ({ commit, dispatch }, { path, config, curs
   return axios.get(path, { params }).then(({ data, headers }) => {
     commit(types.ADD_OR_UPDATE_DISCUSSIONS, data);
 
-    if (headers['x-next-page-cursor']) {
+    if (headers["x-next-page-cursor"]) {
       const nextConfig = { ...config };
 
       if (config?.params?.persist_filter) {
@@ -119,16 +147,16 @@ export const fetchDiscussionsBatch = ({ commit, dispatch }, { path, config, curs
         delete nextConfig.params.persist_filter;
       }
 
-      return dispatch('fetchDiscussionsBatch', {
+      return dispatch("fetchDiscussionsBatch", {
         path,
         config: nextConfig,
-        cursor: headers['x-next-page-cursor'],
+        cursor: headers["x-next-page-cursor"],
         perPage: Math.min(Math.round(perPage * 1.5), 100),
       });
     }
 
     commit(types.SET_FETCHING_DISCUSSIONS, false);
-    dispatch('updateResolvableDiscussionsCounts');
+    dispatch("updateResolvableDiscussionsCounts");
 
     return undefined;
   });
@@ -140,7 +168,10 @@ export const updateDiscussion = ({ commit, state }, discussion) => {
   return utils.findNoteObjectById(state.discussions, discussion.id);
 };
 
-export const setDiscussionSortDirection = ({ commit }, { direction, persist = true }) => {
+export const setDiscussionSortDirection = (
+  { commit },
+  { direction, persist = true }
+) => {
   commit(types.SET_DISCUSSIONS_SORT, { direction, persist });
 };
 
@@ -157,35 +188,40 @@ export const setSelectedCommentPositionHover = ({ commit }, position) => {
 };
 
 export const removeNote = ({ commit, dispatch, state }, note) => {
-  const discussion = state.discussions.find(({ id }) => id === note.discussion_id);
+  const discussion = state.discussions.find(
+    ({ id }) => id === note.discussion_id
+  );
 
   commit(types.DELETE_NOTE, note);
 
-  dispatch('updateMergeRequestWidget');
-  dispatch('updateResolvableDiscussionsCounts');
+  dispatch("updateMergeRequestWidget");
+  dispatch("updateResolvableDiscussionsCounts");
 
   if (isInMRPage()) {
-    dispatch('diffs/removeDiscussionsFromDiff', discussion);
+    dispatch("diffs/removeDiscussionsFromDiff", discussion);
   }
 };
 
 export const deleteNote = ({ dispatch }, note) =>
   axios.delete(note.path).then(() => {
-    dispatch('removeNote', note);
+    dispatch("removeNote", note);
   });
 
 export const updateNote = ({ commit, dispatch }, { endpoint, note }) =>
   axios.put(endpoint, note).then(({ data }) => {
     commit(types.UPDATE_NOTE, data);
-    dispatch('startTaskList');
+    dispatch("startTaskList");
   });
 
-export const updateOrCreateNotes = ({ commit, state, getters, dispatch }, notes) => {
+export const updateOrCreateNotes = (
+  { commit, state, getters, dispatch },
+  notes
+) => {
   const { notesById } = getters;
   const debouncedFetchDiscussions = (isFetching) => {
     if (!isFetching) {
       commit(types.SET_FETCHING_DISCUSSIONS, true);
-      dispatch('fetchDiscussions', { path: state.notesData.discussionsPath });
+      dispatch("fetchDiscussions", { path: state.notesData.discussionsPath });
     } else {
       if (isFetching !== true) {
         clearTimeout(state.currentlyFetchingDiscussions);
@@ -194,8 +230,10 @@ export const updateOrCreateNotes = ({ commit, state, getters, dispatch }, notes)
       commit(
         types.SET_FETCHING_DISCUSSIONS,
         setTimeout(() => {
-          dispatch('fetchDiscussions', { path: state.notesData.discussionsPath });
-        }, constants.DISCUSSION_FETCH_TIMEOUT),
+          dispatch("fetchDiscussions", {
+            path: state.notesData.discussionsPath,
+          });
+        }, constants.DISCUSSION_FETCH_TIMEOUT)
       );
     }
   };
@@ -203,8 +241,14 @@ export const updateOrCreateNotes = ({ commit, state, getters, dispatch }, notes)
   notes.forEach((note) => {
     if (notesById[note.id]) {
       commit(types.UPDATE_NOTE, note);
-    } else if (note.type === constants.DISCUSSION_NOTE || note.type === constants.DIFF_NOTE) {
-      const discussion = utils.findNoteObjectById(state.discussions, note.discussion_id);
+    } else if (
+      note.type === constants.DISCUSSION_NOTE ||
+      note.type === constants.DIFF_NOTE
+    ) {
+      const discussion = utils.findNoteObjectById(
+        state.discussions,
+        note.discussion_id
+      );
 
       if (discussion) {
         commit(types.ADD_NEW_REPLY_TO_DISCUSSION, note);
@@ -221,17 +265,20 @@ export const updateOrCreateNotes = ({ commit, state, getters, dispatch }, notes)
 
 export const replyToDiscussion = (
   { commit, state, getters, dispatch },
-  { endpoint, data: reply },
+  { endpoint, data: reply }
 ) =>
   axios.post(endpoint, reply).then(({ data }) => {
     if (data.discussion) {
       commit(types.UPDATE_DISCUSSION, data.discussion);
 
-      updateOrCreateNotes({ commit, state, getters, dispatch }, data.discussion.notes);
+      updateOrCreateNotes(
+        { commit, state, getters, dispatch },
+        data.discussion.notes
+      );
 
-      dispatch('updateMergeRequestWidget');
-      dispatch('startTaskList');
-      dispatch('updateResolvableDiscussionsCounts');
+      dispatch("updateMergeRequestWidget");
+      dispatch("startTaskList");
+      dispatch("updateResolvableDiscussionsCounts");
     } else {
       commit(types.ADD_NEW_REPLY_TO_DISCUSSION, data);
     }
@@ -239,21 +286,28 @@ export const replyToDiscussion = (
     return data;
   });
 
-export const createNewNote = ({ commit, dispatch }, { endpoint, data: reply }) =>
+export const createNewNote = (
+  { commit, dispatch },
+  { endpoint, data: reply }
+) =>
   axios.post(endpoint, reply).then(({ data }) => {
     if (!data.errors) {
       commit(types.ADD_NEW_NOTE, data);
 
-      dispatch('updateMergeRequestWidget');
-      dispatch('startTaskList');
-      dispatch('updateResolvableDiscussionsCounts');
+      dispatch("updateMergeRequestWidget");
+      dispatch("startTaskList");
+      dispatch("updateResolvableDiscussionsCounts");
     }
     return data;
   });
 
-export const removePlaceholderNotes = ({ commit }) => commit(types.REMOVE_PLACEHOLDER_NOTES);
+export const removePlaceholderNotes = ({ commit }) =>
+  commit(types.REMOVE_PLACEHOLDER_NOTES);
 
-export const resolveDiscussion = ({ state, dispatch, getters }, { discussionId }) => {
+export const resolveDiscussion = (
+  { state, dispatch, getters },
+  { discussionId }
+) => {
   const discussion = utils.findNoteObjectById(state.discussions, discussionId);
   const isResolved = getters.isDiscussionResolved(discussionId);
 
@@ -263,14 +317,17 @@ export const resolveDiscussion = ({ state, dispatch, getters }, { discussionId }
     return Promise.resolve();
   }
 
-  return dispatch('toggleResolveNote', {
+  return dispatch("toggleResolveNote", {
     endpoint: discussion.resolve_path,
     isResolved,
     discussion: true,
   });
 };
 
-export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, discussion }) => {
+export const toggleResolveNote = (
+  { commit, dispatch },
+  { endpoint, isResolved, discussion }
+) => {
   const method = isResolved
     ? constants.UNRESOLVE_NOTE_METHOD_NAME
     : constants.RESOLVE_NOTE_METHOD_NAME;
@@ -279,27 +336,27 @@ export const toggleResolveNote = ({ commit, dispatch }, { endpoint, isResolved, 
   return axios[method](endpoint).then(({ data }) => {
     commit(mutationType, data);
 
-    dispatch('updateResolvableDiscussionsCounts');
+    dispatch("updateResolvableDiscussionsCounts");
 
-    dispatch('updateMergeRequestWidget');
+    dispatch("updateMergeRequestWidget");
   });
 };
 
 export const closeIssuable = ({ commit, dispatch, state }) => {
-  dispatch('toggleStateButtonLoading', true);
+  dispatch("toggleStateButtonLoading", true);
   return axios.put(state.notesData.closePath).then(({ data }) => {
     commit(types.CLOSE_ISSUE);
-    dispatch('emitStateChangedEvent', data);
-    dispatch('toggleStateButtonLoading', false);
+    dispatch("emitStateChangedEvent", data);
+    dispatch("toggleStateButtonLoading", false);
   });
 };
 
 export const reopenIssuable = ({ commit, dispatch, state }) => {
-  dispatch('toggleStateButtonLoading', true);
+  dispatch("toggleStateButtonLoading", true);
   return axios.put(state.notesData.reopenPath).then(({ data }) => {
     commit(types.REOPEN_ISSUE);
-    dispatch('emitStateChangedEvent', data);
-    dispatch('toggleStateButtonLoading', false);
+    dispatch("emitStateChangedEvent", data);
+    dispatch("toggleStateButtonLoading", false);
   });
 };
 
@@ -328,7 +385,10 @@ export const toggleIssueLocalState = ({ commit }, newState) => {
 export const saveNote = ({ commit, dispatch }, noteData) => {
   // For MR discussuions we need to post as `note[note]` and issue we use `note.note`.
   // For batch comments, we use draft_note
-  const note = noteData.data.draft_note || noteData.data['note[note]'] || noteData.data.note.note;
+  const note =
+    noteData.data.draft_note ||
+    noteData.data["note[note]"] ||
+    noteData.data.note.note;
   let placeholderText = note;
   const hasQuickActions = utils.hasQuickActions(placeholderText);
   const replyId = noteData.data.in_reply_to_discussion_id;
@@ -336,17 +396,17 @@ export const saveNote = ({ commit, dispatch }, noteData) => {
   const postData = { ...noteData };
   if (postData.isDraft === true) {
     methodToDispatch = replyId
-      ? 'batchComments/addDraftToDiscussion'
-      : 'batchComments/createNewDraft';
+      ? "batchComments/addDraftToDiscussion"
+      : "batchComments/createNewDraft";
     if (!postData.draft_note && noteData.note) {
       postData.draft_note = postData.note;
       delete postData.note;
     }
   } else {
-    methodToDispatch = replyId ? 'replyToDiscussion' : 'createNewNote';
+    methodToDispatch = replyId ? "replyToDiscussion" : "createNewNote";
   }
 
-  $('.notes-form .flash-container').hide(); // hide previous flash notification
+  $(".notes-form .flash-container").hide(); // hide previous flash notification
   commit(types.REMOVE_PLACEHOLDER_NOTES); // remove previous placeholders
 
   if (hasQuickActions) {
@@ -369,7 +429,8 @@ export const saveNote = ({ commit, dispatch }, noteData) => {
   }
 
   const processQuickActions = (res) => {
-    const { errors: { commands_only: message } = { commands_only: null } } = res;
+    const { errors: { commands_only: message } = { commands_only: null } } =
+      res;
     /*
      The following reply means that quick actions have been successfully applied:
 
@@ -382,16 +443,16 @@ export const saveNote = ({ commit, dispatch }, noteData) => {
       // this is a temporary solution until we have confidentiality real-time updates
       if (
         confidentialWidget.setConfidentiality &&
-        message.some((m) => m.includes('Made this issue confidential'))
+        message.some((m) => m.includes("Made this issue confidential"))
       ) {
         confidentialWidget.setConfidentiality();
       }
 
-      $('.js-gfm-input').trigger('clear-commands-cache.atwho');
+      $(".js-gfm-input").trigger("clear-commands-cache.atwho");
 
       createFlash({
-        message: message || __('Commands applied'),
-        type: 'notice',
+        message: message || __("Commands applied"),
+        type: "notice",
         parent: noteData.flashContainer,
       });
     }
@@ -406,7 +467,7 @@ export const saveNote = ({ commit, dispatch }, noteData) => {
       return res;
     }
 
-    const votesBlock = $('.js-awards-block').eq(0);
+    const votesBlock = $(".js-awards-block").eq(0);
 
     return loadAwardsHandler()
       .then((awardsHandler) => {
@@ -415,7 +476,9 @@ export const saveNote = ({ commit, dispatch }, noteData) => {
       })
       .catch(() => {
         createFlash({
-          message: __('Something went wrong while adding your award. Please try again.'),
+          message: __(
+            "Something went wrong while adding your award. Please try again."
+          ),
           parent: noteData.flashContainer,
         });
       })
@@ -424,9 +487,10 @@ export const saveNote = ({ commit, dispatch }, noteData) => {
 
   const processTimeTracking = (res) => {
     const { commands_changes: commandsChanges } = res;
-    const { spend_time: spendTime, time_estimate: timeEstimate } = commandsChanges || {};
+    const { spend_time: spendTime, time_estimate: timeEstimate } =
+      commandsChanges || {};
     if (spendTime != null || timeEstimate != null) {
-      sidebarTimeTrackingEventHub.$emit('timeTrackingUpdated', {
+      sidebarTimeTrackingEventHub.$emit("timeTrackingUpdated", {
         commands_changes: commandsChanges,
       });
     }
@@ -450,9 +514,12 @@ export const saveNote = ({ commit, dispatch }, noteData) => {
 
       // we handle only errors.base for now
       if (base.length > 0) {
-        const errorMsg = sprintf(__('Your comment could not be submitted because %{error}'), {
-          error: base[0].toLowerCase(),
-        });
+        const errorMsg = sprintf(
+          __("Your comment could not be submitted because %{error}"),
+          {
+            error: base[0].toLowerCase(),
+          }
+        );
         createFlash({
           message: errorMsg,
           parent: noteData.flashContainer,
@@ -481,16 +548,16 @@ const pollSuccessCallBack = async (resp, commit, state, getters, dispatch) => {
   }
 
   if (window.gon?.features?.paginatedNotes && !resp.more && state.isFetching) {
-    eventHub.$emit('fetchedNotesData');
-    dispatch('setFetchingState', false);
-    dispatch('setNotesFetchedState', true);
-    dispatch('setLoadingState', false);
+    eventHub.$emit("fetchedNotesData");
+    dispatch("setFetchingState", false);
+    dispatch("setNotesFetchedState", true);
+    dispatch("setLoadingState", false);
   }
 
   if (resp.notes?.length) {
-    await dispatch('updateOrCreateNotes', resp.notes);
-    dispatch('startTaskList');
-    dispatch('updateResolvableDiscussionsCounts');
+    await dispatch("updateOrCreateNotes", resp.notes);
+    dispatch("startTaskList");
+    dispatch("updateResolvableDiscussionsCounts");
   }
 
   commit(types.SET_LAST_FETCHED_AT, resp.last_fetched_at);
@@ -502,7 +569,9 @@ const getFetchDataParams = (state) => {
   const endpoint = state.notesData.notesPath;
   const options = {
     headers: {
-      'X-Last-Fetched-At': state.lastFetchedAt ? `${state.lastFetchedAt}` : undefined,
+      "X-Last-Fetched-At": state.lastFetchedAt
+        ? `${state.lastFetchedAt}`
+        : undefined,
     },
   };
 
@@ -520,7 +589,7 @@ export const poll = ({ commit, state, getters, dispatch }) => {
   notePollOccurrenceTracking.handle(2, () => {
     // On the second failure in a row, show the alert and try one more time (hoping to succeed and clear the error)
     flashContainer = createFlash({
-      message: __('Something went wrong while fetching latest comments.'),
+      message: __("Something went wrong while fetching latest comments."),
     });
     setTimeout(() => eTagPoll.restart(), NOTES_POLLING_INTERVAL);
   });
@@ -532,7 +601,7 @@ export const poll = ({ commit, state, getters, dispatch }) => {
         return axios.get(endpoint, options);
       },
     },
-    method: 'poll',
+    method: "poll",
     successCallback: ({ data }) => {
       pollSuccessCallBack(data, commit, state, getters, dispatch);
 
@@ -575,7 +644,7 @@ export const toggleAwardRequest = ({ dispatch }, data) => {
   const { endpoint, awardName } = data;
 
   return axios.post(endpoint, { name: awardName }).then(() => {
-    dispatch('toggleAward', data);
+    dispatch("toggleAward", data);
   });
 };
 
@@ -594,26 +663,31 @@ export const fetchDiscussionDiffLines = ({ commit }, discussion) =>
   });
 
 export const updateMergeRequestWidget = () => {
-  mrWidgetEventHub.$emit('mr.discussion.updated');
+  mrWidgetEventHub.$emit("mr.discussion.updated");
 };
 
 export const setLoadingState = ({ commit }, data) => {
   commit(types.SET_NOTES_LOADING_STATE, data);
 };
 
-export const filterDiscussion = ({ commit, dispatch }, { path, filter, persistFilter }) => {
+export const filterDiscussion = (
+  { commit, dispatch },
+  { path, filter, persistFilter }
+) => {
   commit(types.CLEAR_DISCUSSIONS);
-  dispatch('setLoadingState', true);
-  dispatch('fetchDiscussions', { path, filter, persistFilter })
+  dispatch("setLoadingState", true);
+  dispatch("fetchDiscussions", { path, filter, persistFilter })
     .then(() => {
-      dispatch('setLoadingState', false);
-      dispatch('setNotesFetchedState', true);
+      dispatch("setLoadingState", false);
+      dispatch("setNotesFetchedState", true);
     })
     .catch(() => {
-      dispatch('setLoadingState', false);
-      dispatch('setNotesFetchedState', true);
+      dispatch("setLoadingState", false);
+      dispatch("setNotesFetchedState", true);
       createFlash({
-        message: __('Something went wrong while fetching comments. Please try again.'),
+        message: __(
+          "Something went wrong while fetching comments. Please try again."
+        ),
       });
     });
 };
@@ -622,35 +696,26 @@ export const setCommentsDisabled = ({ commit }, data) => {
   commit(types.DISABLE_COMMENTS, data);
 };
 
-export const startTaskList = ({ dispatch }) =>
-  Vue.nextTick(
-    () =>
-      new TaskList({
-        dataType: 'note',
-        fieldName: 'note',
-        selector: '.notes .is-editable',
-        onSuccess: () => dispatch('startTaskList'),
-      }),
-  );
+export const startTaskList = ({ dispatch }) => {};
 
 export const updateResolvableDiscussionsCounts = ({ commit }) =>
   commit(types.UPDATE_RESOLVABLE_DISCUSSIONS_COUNTS);
 
 export const submitSuggestion = (
   { commit, dispatch },
-  { discussionId, suggestionId, flashContainer, message },
+  { discussionId, suggestionId, flashContainer, message }
 ) => {
   const dispatchResolveDiscussion = () =>
-    dispatch('resolveDiscussion', { discussionId }).catch(() => {});
+    dispatch("resolveDiscussion", { discussionId }).catch(() => {});
 
   commit(types.SET_RESOLVING_DISCUSSION, true);
-  dispatch('stopPolling');
+  dispatch("stopPolling");
 
   return Api.applySuggestion(suggestionId, message)
     .then(dispatchResolveDiscussion)
     .catch((err) => {
       const defaultMessage = __(
-        'Something went wrong while applying the suggestion. Please try again.',
+        "Something went wrong while applying the suggestion. Please try again."
       );
 
       const errorMessage = err.response.data?.message;
@@ -664,29 +729,34 @@ export const submitSuggestion = (
     })
     .finally(() => {
       commit(types.SET_RESOLVING_DISCUSSION, false);
-      dispatch('restartPolling');
+      dispatch("restartPolling");
     });
 };
 
-export const submitSuggestionBatch = ({ commit, dispatch, state }, { message, flashContainer }) => {
-  const suggestionIds = state.batchSuggestionsInfo.map(({ suggestionId }) => suggestionId);
+export const submitSuggestionBatch = (
+  { commit, dispatch, state },
+  { message, flashContainer }
+) => {
+  const suggestionIds = state.batchSuggestionsInfo.map(
+    ({ suggestionId }) => suggestionId
+  );
 
   const resolveAllDiscussions = () =>
     state.batchSuggestionsInfo.map((suggestionInfo) => {
       const { discussionId } = suggestionInfo;
-      return dispatch('resolveDiscussion', { discussionId }).catch(() => {});
+      return dispatch("resolveDiscussion", { discussionId }).catch(() => {});
     });
 
   commit(types.SET_APPLYING_BATCH_STATE, true);
   commit(types.SET_RESOLVING_DISCUSSION, true);
-  dispatch('stopPolling');
+  dispatch("stopPolling");
 
   return Api.applySuggestionBatch(suggestionIds, message)
     .then(() => Promise.all(resolveAllDiscussions()))
     .then(() => commit(types.CLEAR_SUGGESTION_BATCH))
     .catch((err) => {
       const defaultMessage = __(
-        'Something went wrong while applying the batch of suggestions. Please try again.',
+        "Something went wrong while applying the batch of suggestions. Please try again."
       );
 
       const errorMessage = err.response.data?.message;
@@ -701,11 +771,14 @@ export const submitSuggestionBatch = ({ commit, dispatch, state }, { message, fl
     .finally(() => {
       commit(types.SET_APPLYING_BATCH_STATE, false);
       commit(types.SET_RESOLVING_DISCUSSION, false);
-      dispatch('restartPolling');
+      dispatch("restartPolling");
     });
 };
 
-export const addSuggestionInfoToBatch = ({ commit }, { suggestionId, noteId, discussionId }) =>
+export const addSuggestionInfoToBatch = (
+  { commit },
+  { suggestionId, noteId, discussionId }
+) =>
   commit(types.ADD_SUGGESTION_TO_BATCH, { suggestionId, noteId, discussionId });
 
 export const removeSuggestionInfoFromBatch = ({ commit }, suggestionId) =>
@@ -720,23 +793,34 @@ export const removeConvertedDiscussion = ({ commit }, noteId) =>
 export const setCurrentDiscussionId = ({ commit }, discussionId) =>
   commit(types.SET_CURRENT_DISCUSSION_ID, discussionId);
 
-export const fetchDescriptionVersion = ({ dispatch }, { endpoint, startingVersion, versionId }) => {
+export const fetchDescriptionVersion = (
+  { dispatch },
+  { endpoint, startingVersion, versionId }
+) => {
   let requestUrl = endpoint;
 
   if (startingVersion) {
-    requestUrl = mergeUrlParams({ start_version_id: startingVersion }, requestUrl);
+    requestUrl = mergeUrlParams(
+      { start_version_id: startingVersion },
+      requestUrl
+    );
   }
-  dispatch('requestDescriptionVersion');
+  dispatch("requestDescriptionVersion");
 
   return axios
     .get(requestUrl)
     .then((res) => {
-      dispatch('receiveDescriptionVersion', { descriptionVersion: res.data, versionId });
+      dispatch("receiveDescriptionVersion", {
+        descriptionVersion: res.data,
+        versionId,
+      });
     })
     .catch((error) => {
-      dispatch('receiveDescriptionVersionError', error);
+      dispatch("receiveDescriptionVersionError", error);
       createFlash({
-        message: __('Something went wrong while fetching description changes. Please try again.'),
+        message: __(
+          "Something went wrong while fetching description changes. Please try again."
+        ),
       });
     });
 };
@@ -753,24 +837,29 @@ export const receiveDescriptionVersionError = ({ commit }, error) => {
 
 export const softDeleteDescriptionVersion = (
   { dispatch },
-  { endpoint, startingVersion, versionId },
+  { endpoint, startingVersion, versionId }
 ) => {
   let requestUrl = endpoint;
 
   if (startingVersion) {
-    requestUrl = mergeUrlParams({ start_version_id: startingVersion }, requestUrl);
+    requestUrl = mergeUrlParams(
+      { start_version_id: startingVersion },
+      requestUrl
+    );
   }
-  dispatch('requestDeleteDescriptionVersion');
+  dispatch("requestDeleteDescriptionVersion");
 
   return axios
     .delete(requestUrl)
     .then(() => {
-      dispatch('receiveDeleteDescriptionVersion', versionId);
+      dispatch("receiveDeleteDescriptionVersion", versionId);
     })
     .catch((error) => {
-      dispatch('receiveDeleteDescriptionVersionError', error);
+      dispatch("receiveDeleteDescriptionVersionError", error);
       createFlash({
-        message: __('Something went wrong while deleting description changes. Please try again.'),
+        message: __(
+          "Something went wrong while deleting description changes. Please try again."
+        ),
       });
 
       // Throw an error here because a component like SystemNote -
@@ -783,7 +872,9 @@ export const requestDeleteDescriptionVersion = ({ commit }) => {
   commit(types.REQUEST_DELETE_DESCRIPTION_VERSION);
 };
 export const receiveDeleteDescriptionVersion = ({ commit }, versionId) => {
-  commit(types.RECEIVE_DELETE_DESCRIPTION_VERSION, { [versionId]: __('Deleted') });
+  commit(types.RECEIVE_DELETE_DESCRIPTION_VERSION, {
+    [versionId]: __("Deleted"),
+  });
 };
 export const receiveDeleteDescriptionVersionError = ({ commit }, error) => {
   commit(types.RECEIVE_DELETE_DESCRIPTION_VERSION_ERROR, error);

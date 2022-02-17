@@ -5,14 +5,13 @@ import {
   GlModalDirective,
   GlPopover,
   GlButton,
-} from '@gitlab/ui';
-import $ from 'jquery';
-import createFlash from '~/flash';
-import { __, sprintf } from '~/locale';
-import TaskList from '~/task_list';
-import glFeatureFlagMixin from '~/vue_shared/mixins/gl_feature_flags_mixin';
-import CreateWorkItem from '~/work_items/pages/create_work_item.vue';
-import animateMixin from '../mixins/animate';
+} from "@gitlab/ui";
+import $ from "jquery";
+import createFlash from "~/flash";
+import { __, sprintf } from "~/locale";
+import glFeatureFlagMixin from "~/vue_shared/mixins/gl_feature_flags_mixin";
+import CreateWorkItem from "~/work_items/pages/create_work_item.vue";
+import animateMixin from "../mixins/animate";
 
 export default {
   directives: {
@@ -38,17 +37,17 @@ export default {
     descriptionText: {
       type: String,
       required: false,
-      default: '',
+      default: "",
     },
     taskStatus: {
       type: String,
       required: false,
-      default: '',
+      default: "",
     },
     issuableType: {
       type: String,
       required: false,
-      default: 'issue',
+      default: "issue",
     },
     updateUrl: {
       type: String,
@@ -101,76 +100,65 @@ export default {
   },
   methods: {
     renderGFM() {
-      $(this.$refs['gfm-content']).renderGFM();
-
-      if (this.canUpdate) {
-        // eslint-disable-next-line no-new
-        new TaskList({
-          dataType: this.issuableType,
-          fieldName: 'description',
-          lockVersion: this.lockVersion,
-          selector: '.detail-page-description',
-          onUpdate: this.taskListUpdateStarted.bind(this),
-          onSuccess: this.taskListUpdateSuccess.bind(this),
-          onError: this.taskListUpdateError.bind(this),
-        });
-      }
+      $(this.$refs["gfm-content"]).renderGFM();
     },
 
     taskListUpdateStarted() {
-      this.$emit('taskListUpdateStarted');
+      this.$emit("taskListUpdateStarted");
     },
 
     taskListUpdateSuccess() {
-      this.$emit('taskListUpdateSucceeded');
+      this.$emit("taskListUpdateSucceeded");
     },
 
     taskListUpdateError() {
       createFlash({
         message: sprintf(
           __(
-            'Someone edited this %{issueType} at the same time you did. The description has been updated and you will need to make your changes again.',
+            "Someone edited this %{issueType} at the same time you did. The description has been updated and you will need to make your changes again."
           ),
           {
             issueType: this.issuableType,
-          },
+          }
         ),
       });
 
-      this.$emit('taskListUpdateFailed');
+      this.$emit("taskListUpdateFailed");
     },
 
     updateTaskStatusText() {
       const taskRegexMatches = this.taskStatus.match(/(\d+) of ((?!0)\d+)/);
-      const $issuableHeader = $('.issuable-meta');
-      const $tasks = $('#task_status', $issuableHeader);
-      const $tasksShort = $('#task_status_short', $issuableHeader);
+      const $issuableHeader = $(".issuable-meta");
+      const $tasks = $("#task_status", $issuableHeader);
+      const $tasksShort = $("#task_status_short", $issuableHeader);
 
       if (taskRegexMatches) {
         $tasks.text(this.taskStatus);
         $tasksShort.text(
-          `${taskRegexMatches[1]}/${taskRegexMatches[2]} task${taskRegexMatches[2] > 1 ? 's' : ''}`,
+          `${taskRegexMatches[1]}/${taskRegexMatches[2]} task${
+            taskRegexMatches[2] > 1 ? "s" : ""
+          }`
         );
       } else {
-        $tasks.text('');
-        $tasksShort.text('');
+        $tasks.text("");
+        $tasksShort.text("");
       }
     },
     renderTaskActions() {
-      const taskListFields = this.$el.querySelectorAll('.task-list-item');
+      const taskListFields = this.$el.querySelectorAll(".task-list-item");
       taskListFields.forEach((item, index) => {
-        const button = document.createElement('button');
+        const button = document.createElement("button");
         button.classList.add(
-          'btn',
-          'btn-default',
-          'btn-md',
-          'gl-button',
-          'btn-default-tertiary',
-          'gl-left-0',
-          'gl-p-0!',
-          'gl-top-2',
-          'gl-absolute',
-          'js-add-task',
+          "btn",
+          "btn-default",
+          "btn-md",
+          "gl-button",
+          "btn-default-tertiary",
+          "gl-left-0",
+          "gl-p-0!",
+          "gl-top-2",
+          "gl-absolute",
+          "js-add-task"
         );
         button.id = `js-task-button-${index}`;
         this.taskButtons.push(button.id);
@@ -183,21 +171,26 @@ export default {
       });
     },
     openCreateTaskModal(id) {
-      this.activeTask = { id, title: this.$el.querySelector(`#${id}`).parentElement.innerText };
+      this.activeTask = {
+        id,
+        title: this.$el.querySelector(`#${id}`).parentElement.innerText,
+      };
       this.$refs.modal.show();
     },
     closeCreateTaskModal() {
       this.$refs.modal.hide();
     },
     handleCreateTask(title) {
-      const listItem = this.$el.querySelector(`#${this.activeTask.id}`).parentElement;
-      const taskBadge = document.createElement('span');
+      const listItem = this.$el.querySelector(
+        `#${this.activeTask.id}`
+      ).parentElement;
+      const taskBadge = document.createElement("span");
       taskBadge.innerHTML = `
         <svg data-testid="issue-open-m-icon" role="img" aria-hidden="true" class="gl-icon gl-fill-green-500 s12">
           <use href="${gon.sprite_icons}#issue-open-m"></use>
         </svg>
         <span class="badge badge-info badge-pill gl-badge sm gl-mr-1">
-          ${__('Task')}
+          ${__("Task")}
         </span>
         <a href="#">${title}</a>
       `;
@@ -209,7 +202,7 @@ export default {
       this.$refs.convertButton[0].$el.focus();
     },
   },
-  safeHtmlConfig: { ADD_TAGS: ['gl-emoji', 'copy-code'] },
+  safeHtmlConfig: { ADD_TAGS: ["gl-emoji", "copy-code"] },
 };
 </script>
 
@@ -272,7 +265,7 @@ export default {
           data-testid="convert-to-task"
           class="gl-text-gray-900! gl-text-decoration-none! gl-outline-0!"
           @click="openCreateTaskModal(item)"
-          >{{ s__('WorkItem|Convert to work item') }}</gl-button
+          >{{ s__("WorkItem|Convert to work item") }}</gl-button
         >
       </gl-popover>
     </template>
